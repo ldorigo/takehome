@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "crossover-task"
+version = "0.1.0"
+description = ""
+authors = ["Luca Dorigo <dorigoluca@gmail.com>"]
+readme = "README.md"
+packages = [{include = "crossover_task"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+wikipedia-api = "^0.6.0"
+openai = "^0.27.9"
+wikipedia = "^1.4.0"
+watchdog = "^3.0.0"
+streamlit = "^1.26.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
