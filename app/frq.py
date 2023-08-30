@@ -93,11 +93,11 @@ TEXT: {text}
                     "description": "Your tenth FRQ.",
                 },
             },
-            "required": frq_names,
-        },
+            "required": [
+                "frq_1", "frq_2", "frq_3", "frq_4", "frq_5", "frq_6", "frq_7", "frq_8", "frq_9", "frq_10", ] 
+            },
     }
 
-    print("Sending to OpenAI")
     start_time = time.time()
     arguments = await get_response_openai_nonstream(
         messages_for_openai,
@@ -115,11 +115,11 @@ You are an educational expert who is tasked with assessing the quality of free-r
 
 "Draw evidence from literary or informational texts to support analysis, reflection, and research."
 
-Given a text and an FRQ, you assess the quality of the FRQ along the following dimensions:
+Given a text and an FRQ, you assess the quality of the FRQ along the following criteria:
 
 - Clarity: Is the question easily understood? Ambiguity interferes with accurate assessment (1 = Not Clear, 5 = Very Clear).
 - Alignment with Standard: Does the question necessitate drawing evidence from the text for analysis, reflection, or research? (1 = Not Aligned, 5 = Very Aligned).
-- Age-Appropriateness: Is the complexity of the question tailored to the cognitive level of the target age group? (1 = Not Appropriate, 5 = Very Appropriate).
+- Age-Appropriateness: Is the complexity of the question tailored to the cognitive level of the target age group? Does it broach topics that can easily be understood and talked about by fourth graders? (1 = Not Appropriate, 5 = Very Appropriate).
 - Analytical Depth: Does the question prompt thoughtful analysis, not just a regurgitation of facts? (1 = Not Deep, 5 = Very Deep).
 - Open-Endedness: Does the question allow for more than one valid answer to encourage independent thinking? (1 = Not Open-Ended, 5 = Very Open-Ended). 
 - Textual Scope: Does the question cover a significant portion of the text, ensuring comprehensive analysis? (1 = Not Comprehensive, 5 = Very Comprehensive).
@@ -129,7 +129,7 @@ Given a text and an FRQ, you assess the quality of the FRQ along the following d
 - Feasibility of Answer: Does the text provide adequate information to answer the question sufficiently? (1 = Not Feasible, 5 = Very Feasible).
 
 
-When you receive a text and an FRQ, you assess the quality of the FRQ along the above dimensions. For each dimension, you write a brief reasoning (no more than two sentences) about your thoughts, and then you give a numerical score for that dimension. Finally, you use the function `add_assessment` to save your evaluation of the FRQ.
+When you receive a text and an FRQ, you assess the quality of the FRQ along the above criteria. For each criterium, you write a brief reasoning (no more than two sentences) about your thoughts, containing at least one positive AND one negative aspect.. Then you give a numerical score for that criterium. Finally, you use the function `add_assessment` to save your evaluation of the FRQ.
 """
 
     messages_for_openai = [
@@ -154,7 +154,7 @@ FRQ: {frq}
             "properties": {
                 "clarity_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the clarity score.",
+                    "description": "Your reasoning for the clarity score. Includes AT LEAST one positive AND one negative aspect.",
                 },
                 "clarity_score": {
                     "type": "number",
@@ -162,7 +162,7 @@ FRQ: {frq}
                 },
                 "alignment_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the alignment score.",
+                    "description": "Your reasoning for the alignment score. Includes AT LEAST one positive AND one negative aspect.",
                 },
                 "alignment_score": {
                     "type": "number",
@@ -170,7 +170,7 @@ FRQ: {frq}
                 },
                 "age_appropriateness_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the age-appropriateness score.",
+                    "description": "Your reasoning for the age-appropriateness score. Includes AT LEAST one positive AND one negative aspect.",
                 },
                 "age_appropriateness_score": {
                     "type": "number",
@@ -178,7 +178,7 @@ FRQ: {frq}
                 },
                 "analytical_depth_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the analytical depth score.",
+                    "description": "Your reasoning for the analytical depth score. Includes AT LEAST one positive AND one negative aspect.",
                 },
                 "analytical_depth_score": {
                     "type": "number",
@@ -186,7 +186,7 @@ FRQ: {frq}
                 },
                 "open_endedness_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the open-endedness score.",
+                    "description": "Your reasoning for the open-endedness score. Includes AT LEAST one positive AND one negative aspect.",
                 },
                 "open_endedness_score": {
                     "type": "number",
@@ -194,7 +194,7 @@ FRQ: {frq}
                 },
                 "textual_scope_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the textual scope score.",
+                    "description": "Your reasoning for the textual scope score. Includes AT LEAST one positive AND one negative aspect.",
                 },
                 "textual_scope_score": {
                     "type": "number",
@@ -202,7 +202,7 @@ FRQ: {frq}
                 },
                 "language_complexity_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the language complexity score.",
+                    "description": "Your reasoning for the language complexity score. Includes AT LEAST one positive AND one negative aspect.",
                 },
                 "language_complexity_score": {
                     "type": "number",
@@ -210,7 +210,7 @@ FRQ: {frq}
                 },
                 "bias_free_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the bias-free score.",
+                    "description": "Your reasoning for the bias-free score. Includes AT LEAST one positive AND one negative aspect.",
                 },
                 "bias_free_score": {
                     "type": "number",
@@ -218,7 +218,7 @@ FRQ: {frq}
                 },
                 "action_verbs_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the action verbs score.",
+                    "description": "Your reasoning for the action verbs score. Includes AT LEAST one positive AND one negative aspect.",
                 },
                 "action_verbs_score": {
                     "type": "number",
@@ -226,7 +226,7 @@ FRQ: {frq}
                 },
                 "feasibility_of_answer_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the feasibility of answer score.",
+                    "description": "Your reasoning for the feasibility of answer score. Includes AT LEAST one positive AND one negative aspect.",
                 },
                 "feasibility_of_answer_score": {
                     "type": "number",

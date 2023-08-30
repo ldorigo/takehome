@@ -11,8 +11,10 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 
-openai.api_key = "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"
 
+# "model": "gpt-4-0613",
+# "model": "gpt-3.5-turbo-0613",
+MODEL = "gpt-4-0613"
 
 class FunctionCallResponse(TypedDict):
     name: str
@@ -95,11 +97,13 @@ async def get_response_openai_nonstream(
     messages: list[OpenaiChatMessage],
     functions: list[OpenAifunction] | None = None,
     function_name: str|None = None,
+    # model: str = MODEL,
 ) -> str | FunctionCallResponse:
     while True:
         try:
             args = {
-                "model": "gpt-4-0613",
+                    "model" : openai.MODEL,
+                # "model": "gpt-4-0613",
                 # "model": "gpt-3.5-turbo-0613",
                 "n": 1,
                 "top_p": 1,
@@ -115,7 +119,7 @@ async def get_response_openai_nonstream(
                 args["function_call"] = {
                     "name": function_name,
                 }
-            # logger.info(f"Sending request to OpenAI: {args}")
+            logger.info(f"Sending request to OpenAI with model {openai.MODEL}")
             response = await openai.ChatCompletion.acreate(**args)
             logger.info("Got response from OpenAI")
             choices = response["choices"]
@@ -138,7 +142,7 @@ async def get_response_openai_nonstream(
             logger.warning(f"JSON error, retrying: {str(json_error)}")
             # wait a bit and try again
         except Exception as openai_exception:
-            if "Overload" in str(openai_exception):
+            if "Overload" in str(openai_exception) or "RateLimit" in str(openai_exception):
                 logger.warning("Overload error, retrying")
                 # wait a bit and try again
                 await asyncio.sleep(1)

@@ -1,12 +1,9 @@
 import json
-from pprint import pprint
 import time
 import aiohttp
 
-import openai
 import wikipediaapi 
 import wikipedia as wpsearch # Older library that upports search but borks other stuff
-from typing import List, Tuple
 from app.llm import get_response_openai_nonstream, OpenAifunction, OpenaiChatMessage
     
 
@@ -75,7 +72,7 @@ async def rank_section(section: str, title: str,   topic: str) -> dict:
 
 "Draw evidence from literary or informational texts to support analysis, reflection, and research."
 
-You score each text on a scale from 1 to 5 along the following dimensions:
+You score each text on a scale from 1 to 5 along the following criteria:
 
 - Relevance to the topic: How relevant is the text to the topic? Does it directly address the topic or is it only tangentially related? (1 = not relevant, 5 = very relevant)
 - Age-appropriateness: Is the text appropriate for 4th graders? Are the subjects and topics approached appropriate for children of that age (focus on the topics themselves, not on the complexity. E.g. does it talk about sexual or other adult topics)? (1 = not appropriate, 5 = very appropriate)
@@ -84,7 +81,7 @@ You score each text on a scale from 1 to 5 along the following dimensions:
 - Overall educational value: overall, how "interesting" is the text"? Does it broach important social or scientific topics? Or is it a very niche or technical text? We are not interested in simple enumerations of facts. (1 = not interesting, 5 = very interesting)
 
 
-When you receive a text and a topic, you evaluate it to see if it is appropriate for assessing this standard. To do so, you write brief reasoning (no more than two sentences) about your thoughts for each dimension, and then give a numerical score for that dimension. Afterwards, you use the function `add_assessment` to save your evaluation of the text.
+When you receive a text and a topic, you evaluate it to see if it is appropriate for assessing this standard. To do so, you write brief reasoning (no more than two sentences) about your thoughts for each criterium containint at least one positive AND one negative point. Then give a numerical score for that criterium. Afterwards, you use the function `add_assessment` to save your evaluation of the text.
 """
 
     messages_for_openai = [
@@ -113,7 +110,7 @@ TEXT:
             "properties": {
                 "relevance_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the relevance score.",
+                    "description": "Your reasoning for the relevance score. Includes at least one positive and one negative point.",
                 },
                 "relevance_score": {
                     "type": "number",
@@ -121,7 +118,7 @@ TEXT:
                 },
                 "age_appropriateness_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the age-appropriateness score.",
+                    "description": "Your reasoning for the age-appropriateness score. Includes at least one positive and one negative point.",
                 },
                 "age_appropriateness_score": {
                     "type": "number",
@@ -129,7 +126,7 @@ TEXT:
                 },
                 "complexity_fit_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the complexity fit score.",
+                    "description": "Your reasoning for the complexity fit score. Includes at least one positive and one negative point.",
                 },
                 "complexity_fit_score": {
                     "type": "number",
@@ -137,7 +134,7 @@ TEXT:
                 },
                 "potential_for_assessment_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the potential for assessment score.",
+                    "description": "Your reasoning for the potential for assessment score. Includes at least one positive and one negative point.",
                 },
                 "potential_for_assessment_score": {
                     "type": "number",
@@ -145,7 +142,7 @@ TEXT:
                 },
                 "overall_educational_value_reasoning": {
                     "type": "string",
-                    "description": "Your reasoning for the overall educational value score.",
+                    "description": "Your reasoning for the overall educational value score. Includes at least one positive and one negative point.",
                 },
                 "overall_educational_value_score": {
                     "type": "number",
@@ -182,9 +179,10 @@ TEXT:
     return arguments
 
 
-def select_best_text(text_rankings: list[dict]):
+def select_best_text(text_rankings: list[dict]) -> dict:
+    
     # Start by removing any text for which age-appropriateness is below 3
-    text_rankings = [text for text in text_rankings if text["age_appropriateness_score"] >= 3]
+    text_rankings = [text for text in text_rankings if text["age_appropriateness_score"] > 3]
 
 
     # Compute average score for each text
@@ -204,17 +202,31 @@ def select_best_text(text_rankings: list[dict]):
     return text_rankings[0]
 
 async def clean_and_format_text(text: str) -> str:
+    # prompt = f"""
+    # You are tasked with cleaning up texts so that they are easily readable and well formatted. Given a text, you do the following tasks:
+
+    # - Format them as valid markdown, escaping any special characters.
+    # - Remove any HTML tags and replace them with markdown equivalents when possible
+    # - Fix spacing issues (e.g. double spaces, etc.) and remove weird characters (replace them by unicode when possible)
+    # - Remove any text that is not part of the main body of the text (e.g. references, etc.)
+
+    # Given a text, you respond ONLY with the reformatted text. You do not need to provide any reasoning. You do not add any headers or footers. 
+    # Make sure to preserve all existing formatting (lists, headers etc.).
+    # """
+
     prompt = f"""
-    You are tasked with cleaning up texts so that they are easily readable and well formatted. Given a text, you do the following tasks:
+You are tasked with rewriting a text in order to make it accessible to a 4th grader.
+Given a text, you rewrite it for a 4th grader, keeping the folowing in mind:
 
-    - Format them as valid markdown, escaping any special characters.
-    - Remove any HTML tags and replace them with markdown equivalents when possible
-    - Fix spacing issues (e.g. double spaces, etc.) and remove weird characters (replace them by unicode when possible)
-    - Remove any text that is not part of the main body of the text (e.g. references, etc.)
+- The original structure of the text should be preserved 1:1
+- You make sure that the information content is exactly the same. You do not add or remove any information (you are allowed to add short clarifying passages to explain words or concepts that might be unclear to a 4th grader)
+- You also explain acronyms if they are not explained in the text itself
+- You mostly just simplify vocabulary and phrase structures.
 
-    Given a text, you respond ONLY with the reformatted text. You do not need to provide any reasoning. You do not add any headers or footers. 
-    Make sure to preserve all existing formatting (lists, headers etc.).
-    """
+Make sure you don't inadvertently alter the meaning of the original text.
+
+You also fix the text formatting by removing references, fixing spacing issues, and replacing HTML tags with markdown equivalents when possible. 
+"""
 
     messages_for_openai = [
         OpenaiChatMessage(role="system", content=prompt),
@@ -246,7 +258,7 @@ if __name__ == "__main__":
             print(f"Got {len(sections)} sections")
             # Rank all sections in parallel 
             start_time = time.time()
-            results = await asyncio.gather(*[rank_section(section[0], section[1], "Baseball") for section in sections])
+            results = await asyncio.gather(*[rank_section(section[0], section[1], "Baseball") for section in sections[:10]])
             print(f"Total time: {time.time() - start_time}")
 
             with open("results.json", "w") as f:

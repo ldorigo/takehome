@@ -1,5 +1,4 @@
 import asyncio
-import json
 import time
 
 from app.llm import OpenAifunction, OpenaiChatMessage, get_response_openai_nonstream
@@ -30,14 +29,15 @@ The following is a list of aspects that make up excellent feedback:
 - Watch Your Grammar and Syntax: Maintain high linguistic standards in your feedback to model what you expect from students.
 
 Given a text, a free-response question, and a student answer, you must give feedback on the student's answer. Your feedback is structured as follows: 
+
 - A bullet list containing your (private) notes on the student's performance on the parameter. This will not be shown to the student and can be written with expert terminology.
-- A short, one-sentence high-level summary of the student's performance on the parameter. 
+- A short, one-sentence high-level summary of the student's performance on the parameter. You write this in second person, addressing the student directly. This will be shown to the student so it should be written in a warm, encouraging tone and with language that is appropriate for a fourth grader.
 - A grade on a scale from 1 to 5, where 1 is the worst and 5 is the best. 
-- A longer feedback for the student. This should be at least a couple of paragraphs long and give detailed feedback on the student's performance. It should contain actionable feedback that the student can use to improve their performance as well as concrete examples of mistakes that the student made and how he or she could have answered better.
+- A longer feedback for the student. This should be at least a couple of paragraphs long and give detailed feedback on the student's performance. It should contain actionable feedback that the student can use to improve their performance as well as concrete examples of mistakes that the student made and how he or she could have answered better. When providing examples, make sure to contextualize them, possibly showing the full sentence or paragraph that the student wrote. Make sure to ONLY give feedback on the parameter that is currently being tested. Do not give feedback on other parameters or on the answer as a whole (for example, about grammar if the parameter is "analytical quality".)
 - Finally, a short paragraph of self-criticism on the provided long-form feedback. How well does the feedback meet the criteria listed above? What could you improve to increase the quality of your feedback?
 
 
-To provide your feedback, you use the function add_feedback.
+To provide your feedback, you use the function add_feedback. Long-form feedbacks should be written using markdown, escaped for being included in a json document.
 """
 
     messages_for_openai = [
@@ -88,23 +88,6 @@ ANSWER: {answer}
             "required": ["notes", "summary", "grade", "feedback", "self_criticism"],
         },
     }
-
-    # while True:
-    #     try:
-    #         response = await get_response_openai_nonstream(
-    #     messages_for_openai,
-    #     [add_feedback_openai_function],
-    #     function_name="add_feedback",
-    # )   
-    #         arguments = json.loads(response["arguments"].replace("\n", ""))
-    #         break
-    #     except json.JSONDecodeError:
-    #         print("JSONDecodeError")
-    #         await asyncio.sleep(1)
-    #     except Exception as e:
-    #         if "overloaded" in str(e):
-    #             print("Overloaded")
-    #             await asyncio.sleep(1)           
     arguments = await get_response_openai_nonstream(
         messages_for_openai,
         [add_feedback_openai_function],
@@ -126,7 +109,7 @@ You are an educational expert currently writing feedback for a fourth grade stud
 - Clarity: Is the feedback easily understood, avoiding pedagogic jargon that could confuse rather than enlighten?
 - Examples: Does the feedback include concrete examples of mistakes that the student made and how he or she could have answered better?
 
-You produce the final feedback by using the function add_aggregated_feedback. Make sure to make a single, cohesive *new* feedback and not simply a summary of the other feedbacks. Also make sure to re-use specific examples and suggestions from the individual feedbacks. Finally, make sure to incorporate the comments on the individual feedbacks into the final feedback.
+You produce the final feedback by using the function add_aggregated_feedback. You make a single, cohesive *new* feedback and not simply a summary of the other feedbacks. You re-use specific examples and suggestions from the individual feedbacks and incorporate the comments on the individual feedbacks into the final feedback. You write this aggregated feedback in a warm, encouraging tone and with language that is appropriate for a fourth grader. You do not introduce yourself or greet the student, you immediately start with your feedback. For the long-form feedback, you write it as Markdown, escaped for being included in a json document.
 """
 
     messages_for_openai = [
@@ -176,11 +159,11 @@ FEEDBACK 3:
                 },
                 "aggregated_feedback": {
                     "type": "string",
-                    "description": "Detailed feedback reprising the important aspects of the various individual feedbacks while incorporating the comments on the individual feedbacks.",
+                    "description": "Detailed feedback reprising the important aspects of the various individual feedbacks while incorporating the comments on the individual feedbacks. Markdown, escaped for being included in a json document.",
                 },
                 "aggregated_summary": {
                     "type": "string",
-                    "description": "A short, one-sentence high-level summary of the student's performance on the parameter, which summarizes the aggregated feedback.",
+                    "description": "A short, one-sentence high-level summary of the student's performance on the parameter, which summarizes the aggregated feedback. This will be shown to the student and should be written in the same tone as the individual summaries.",
                 },
                 "aggregated_grade": {
                     "type": "number",
@@ -195,22 +178,6 @@ FEEDBACK 3:
             ],
         },
     }
-
-    # while True: 
-    #     try: 
-    #         a = await get_response_openai_nonstream(
-    #     messages_for_openai,
-    #     [add_aggregated_feedback_openai_function],
-    #     function_name="add_aggregated_feedback",
-    # ) 
-    #         break
-    #     except Exception as e:
-    #         if "overloaded" in str(e):
-    #             print("Overloaded")
-    #             await asyncio.sleep(1)
-
-
-    # arguments = json.loads(response["arguments"].replace("\n", ""))
 
     arguments = await get_response_openai_nonstream(
         messages_for_openai,
@@ -254,8 +221,6 @@ async def compute_full_feedback_on_parameter(
     return aggregated_feedback
 
 
-
-
 async def give_feedback_on_answer(
     answer: str,
     frq: str,
@@ -295,7 +260,13 @@ async def give_feedback_on_answer(
 
 async def rewrite_text_according_to_feedback(text, question, answer, feedback):
     prompt = f"""
-You're an educational expert tasked with rewriting a student's answer to a free-response question (FRQ) according to the feedback given by another expert. The objective is to give the student an example of a "perfect" answer to the question, that integrates all the feedback that he was given. Given a text, a question, the student's answer, and the feedback, you must rewrite the student's answer according to the feedback. Your rewritten answer should be as close as possible to the original answer, while incorporating the feedback. Only change the parts of the answer that are necessary to incorporate the feedback. ONLY reply with the new answer, no introduction, no conclusion, no feedback, no nothing. Just the new answer.
+You're an educational expert tasked with rewriting a student's answer to a free-response question (FRQ) according to the feedback given by another expert.
+
+The objective is to show the student an ideal rewrite of his answer that integrates all the feedback that he was given. Given a text, a question, the student's answer, and the feedback, you must rewrite the student's answer according to the feedback. 
+
+Your rewritten answer should fully mirror the original answer (structure, wording, etc.), while incorporating the feedback. Only change the parts of the answer that are necessary to incorporate the feedback. ONLY reply with the new answer, no introduction, no conclusion, no feedback, no nothing. Just the new answer. 
+
+The new answer should still be written in the same tone as the original answer, and should be written in a way that is appropriate and realistic for a fourth grader. Make sure to use vocabulary that is appropriate for a fourth grader.
 """
 
     messages_for_openai = [

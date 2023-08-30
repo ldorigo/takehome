@@ -1,5 +1,4 @@
 import json
-from re import I
 import time
 from app.llm import OpenAifunction, OpenaiChatMessage, get_response_openai_nonstream
 
@@ -11,7 +10,7 @@ async def answer_question_as_student(
 ): 
     
     prompt = f"""
-You are tasked with writing an answer to the given question as a fourth-grader would write it - this means potentially pretending to make a lot of grammar mistakes and typos. You receive a text and a question, and are tasked with producing an answer to the question using the text. The answer should be at least 200 words long. Make sure to emulate the writing style of a fourth-grader. Additionally, the quality of your answer should be as follows:
+You are tasked with writing an answer to the given question as a fourth-grader would write it. You receive a text and a question, and are tasked with producing an answer to the question using the text. The answer should be at least 150 words long. Make sure to emulate the writing style of a fourth-grader. Additionally, the quality of your answer should be as follows:
 
 {answer_description}
 
