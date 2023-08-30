@@ -3,8 +3,8 @@ import time
 import aiohttp
 
 import wikipediaapi 
-import wikipedia as wpsearch # Older library that upports search but borks other stuff
-from app.llm import get_response_openai_nonstream, OpenAifunction, OpenaiChatMessage
+import wikipedia as wpsearch # Older library that supports search but borks other stuff
+from llm import get_response_openai_nonstream, OpenAifunction, OpenaiChatMessage
     
 
 

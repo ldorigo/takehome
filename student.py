@@ -1,6 +1,6 @@
 import json
 import time
-from app.llm import OpenAifunction, OpenaiChatMessage, get_response_openai_nonstream
+from llm import OpenAifunction, OpenaiChatMessage, get_response_openai_nonstream
 
 
 async def answer_question_as_student(

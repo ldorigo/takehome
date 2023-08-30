@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-from app.llm import OpenAifunction, OpenaiChatMessage, get_response_openai_nonstream
+from llm import OpenAifunction, OpenaiChatMessage, get_response_openai_nonstream
 
 
 async def generate_individual_feedback_on_answer_parameter(
